@@ -1,0 +1,42 @@
+{% import "_includes/forms" as forms %}
+
+{{ forms.autosuggestField({
+    label: 'Loki API key'|t('loki-logger'),
+    instructions: 'Sent as the X-Api-Key header on every push. Leave blank to disable sending (handy for local/dev).'|t('loki-logger'),
+    id: 'apiKey',
+    name: 'apiKey',
+    suggestEnvVars: true,
+    value: settings.apiKey,
+    errors: settings.getErrors('apiKey'),
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Loki push URL'|t('loki-logger'),
+    instructions: 'Loki HTTP push endpoint. Required: sending is disabled while this is blank.'|t('loki-logger'),
+    id: 'pushUrl',
+    name: 'pushUrl',
+    placeholder: 'https://loki.example.com/loki/api/v1/push',
+    suggestEnvVars: true,
+    value: settings.pushUrl,
+    errors: settings.getErrors('pushUrl'),
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Site label'|t('loki-logger'),
+    instructions: 'Value of the `site` Loki stream label, identifying this site in Grafana (e.g. "www.client.com"). Should be the production website domain for all environments. Blank uses the primary site host.'|t('loki-logger'),
+    id: 'site',
+    name: 'site',
+    suggestEnvVars: true,
+    value: settings.site,
+    errors: settings.getErrors('site'),
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Host label'|t('loki-logger'),
+    instructions: 'Value of the `host` Loki stream label, identifying the server (e.g. "web1"). Blank uses the machine hostname. Keep it stable and low-cardinality.'|t('loki-logger'),
+    id: 'host',
+    name: 'host',
+    suggestEnvVars: true,
+    value: settings.host,
+    errors: settings.getErrors('host'),
+}) }}

@@ -1,0 +1,43 @@
+{
+    "name": "sunnybyte/craft-loki-logger",
+    "description": "Send Craft warning/error logs to Loki via its HTTP push API, using a queue job. Built for agentless, ephemeral hosts like Craft Cloud.",
+    "type": "craft-plugin",
+    "license": "GPL-3.0-or-later",
+    "keywords": [
+        "craft",
+        "craftcms",
+        "craft-plugin",
+        "loki",
+        "grafana",
+        "logging",
+        "logs",
+        "observability",
+        "craft-cloud"
+    ],
+    "support": {
+        "issues": "https://github.com/sunnybyte/craft-loki-logger/issues",
+        "source": "https://github.com/sunnybyte/craft-loki-logger"
+    },
+    "require": {
+        "php": "^8.2",
+        "craftcms/cms": "^5.0",
+        "monolog/monolog": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "sunnybyte\\lokilogger\\": "src/"
+        }
+    },
+    "extra": {
+        "handle": "loki-logger",
+        "name": "Loki Logger",
+        "class": "sunnybyte\\lokilogger\\Plugin",
+        "schemaVersion": "1.0.0",
+        "developer": "SunnyByte",
+        "developerUrl": "https://sunnybyte.com",
+        "documentationUrl": "https://github.com/sunnybyte/craft-loki-logger",
+        "changelogUrl": "https://raw.githubusercontent.com/sunnybyte/craft-loki-logger/main/CHANGELOG.md",
+        "hasSettings": true,
+        "hasCpSection": false
+    }
+}
