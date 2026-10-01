@@ -77,6 +77,22 @@ class LokiTarget extends Target
         QueueLogBehavior::class . '::afterError',
     ];
 
+    /**
+     * User-defined suppression rules (from the plugin settings). A line is
+     * dropped when it matches any rule; a rule matches when both its fields do:
+     *  - category: exact match, or prefix match when it ends in `*` (same
+     *    semantics as $except). Blank matches any category.
+     *  - message: case-sensitive substring of the line's message (the
+     *    exception message for exceptions). Blank matches any message.
+     * Rules with both fields blank are ignored so they can't drop everything.
+     *
+     * Unlike $except, this can tell lines within one category apart, e.g. drop
+     * only the "Invalid token" 400s while still shipping other bad requests.
+     *
+     * @var array<int,array{category?:string,message?:string}>
+     */
+    public array $suppress = [];
+
     /** Max log lines per queue job; larger batches are chunked. */
     public int $batchSize = 500;
 
@@ -149,6 +165,9 @@ class LokiTarget extends Target
         $values = [];
         foreach ($this->messages as $message) {
             if ($errorsOnly && $message[1] !== Logger::LEVEL_ERROR) {
+                continue;
+            }
+            if ($this->isSuppressed($message)) {
                 continue;
             }
             $values[] = $this->toLokiValue($message, $requestExtra);
@@ -380,6 +399,51 @@ class LokiTarget extends Target
             } elseif ($route === $pattern) {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether a Yii log message tuple matches any of the $suppress rules.
+     *
+     * @param array $message [text, level, category, timestamp, traces, memory]
+     */
+    private function isSuppressed(array $message): bool
+    {
+        if ($this->suppress === []) {
+            return false;
+        }
+
+        [$text, , $category] = $message;
+        $category = (string)$category;
+        $line = match (true) {
+            $text instanceof \Throwable => $text->getMessage(),
+            is_string($text) => $text,
+            default => \yii\helpers\VarDumper::export($text),
+        };
+
+        foreach ($this->suppress as $rule) {
+            $categoryPattern = (string)($rule['category'] ?? '');
+            $messagePattern = (string)($rule['message'] ?? '');
+            if ($categoryPattern === '' && $messagePattern === '') {
+                continue;
+            }
+
+            if ($categoryPattern !== '') {
+                $categoryMatches = str_ends_with($categoryPattern, '*')
+                    ? str_starts_with($category, substr($categoryPattern, 0, -1))
+                    : $category === $categoryPattern;
+                if (!$categoryMatches) {
+                    continue;
+                }
+            }
+
+            if ($messagePattern !== '' && !str_contains($line, $messagePattern)) {
+                continue;
+            }
+
+            return true;
         }
 
         return false;

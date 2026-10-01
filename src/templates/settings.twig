@@ -40,3 +40,29 @@
     value: settings.host,
     errors: settings.getErrors('host'),
 }) }}
+
+{{ forms.editableTableField({
+    label: 'Suppressed logs'|t('loki-logger'),
+    instructions: 'Log lines matching any row are never sent to Loki. Category is the line\'s `channel` in Grafana, matched exactly or by prefix when it ends in `*`. Exceptions use their class name, except HTTP exceptions, which all use `yii\\web\\HttpException:<status>` (e.g. `yii\\web\\HttpException:400`). Message is a case-sensitive substring of the log message. A blank field matches anything, so a row needs at least one of the two.'|t('loki-logger'),
+    id: 'suppress',
+    name: 'suppress',
+    cols: {
+        category: {
+            heading: 'Category'|t('loki-logger'),
+            type: 'singleline',
+            code: true,
+            placeholder: 'yii\\web\\HttpException:400',
+        },
+        message: {
+            heading: 'Message contains'|t('loki-logger'),
+            type: 'singleline',
+            placeholder: 'Invalid token',
+        },
+    },
+    rows: settings.suppress,
+    allowAdd: true,
+    allowDelete: true,
+    allowReorder: true,
+    addRowLabel: 'Add a rule'|t('loki-logger'),
+    errors: settings.getErrors('suppress'),
+}) }}

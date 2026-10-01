@@ -48,6 +48,7 @@ class Plugin extends \craft\base\Plugin
         Craft::$app->getLog()->targets[] = Craft::createObject([
             'class' => LokiTarget::class,
             'minLevel' => $this->craftLogLevel(),
+            'suppress' => $this->getSettings()->suppress,
         ] + $config);
     }
 

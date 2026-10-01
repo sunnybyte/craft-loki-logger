@@ -22,9 +22,13 @@ Craft (web / console / queue)
 
 - **No request latency**: the request only enqueues a job (a DB insert). The HTTP
   push runs later in the queue worker, which Craft Cloud processes automatically.
-- **No log storms**: a reentrancy guard plus bounded in-job retries mean a Loki
-  outage drops the batch (best-effort) instead of recursively re-logging. Logs
-  also stay in Cloud's native command/stdout history.
+- **No log storms**: a reentrancy guard plus bounded retries mean a Loki outage
+  fails the batch instead of recursively re-logging. Logs also stay in Cloud's
+  native command/stdout history.
+- **Retries don't block the queue**: each job makes one push attempt. On
+  failure it re-queues a delayed copy of itself (retrying after 30s, then 90s)
+  rather than sleeping in the worker. After the third failed attempt the job is
+  marked failed in the Queue Manager, where it can be retried manually.
 - **Low-cardinality labels**: `app="craft"`, `env`, `site`, `host`. Everything
   else (`level_name`, `message`, `context`, exception trace) lives in the JSON
   line.
@@ -65,6 +69,25 @@ ephemeral hosts like Craft Cloud, where settings are read-only in production):
 | Host label | `$LOKI_HOST` | No | `host` stream label identifying the server (e.g. `web1`). Falls back to the machine hostname. Keep it stable and low-cardinality. |
 
 The `env` label is taken from `CRAFT_ENVIRONMENT`.
+
+### Suppressing logs
+
+The **Suppressed logs** table drops matching lines before they're queued. Each
+row has two fields; a line is suppressed when it matches every non-blank field of
+any row (rows with both fields blank are ignored):
+
+| Field | Matches |
+|-------|---------|
+| Category | The Yii log category (the line's `channel` field in Grafana): exact, or by prefix when it ends in `*`. Exceptions are logged under their class name, except HTTP exceptions, which Yii logs under the generic `yii\web\HttpException:<status>` whatever their actual class (a `BadRequestHttpException` is `yii\web\HttpException:400`). |
+| Message contains | A case-sensitive substring of the log message (the exception message for exceptions). |
+
+By default the table has two rules, which drop routine client-side bad requests
+while still shipping other 400s. Delete a row to ship those errors again:
+
+| Category | Message contains | Cause |
+|----------|------------------|-------|
+| `yii\web\HttpException:400` | `Invalid token` | Stale or malformed `token` params (bots, expired preview links). |
+| `yii\web\HttpException:400` | `Unable to verify your data submission.` | CSRF validation failures (expired sessions, stale cached forms, bots posting forms). |
 
 ## Verifying
 
